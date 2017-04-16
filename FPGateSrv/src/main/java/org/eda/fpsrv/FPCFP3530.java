@@ -26,6 +26,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import org.datecs.fpcom.CSFP3530;
 
@@ -752,6 +753,23 @@ public class FPCFP3530 extends FPCBase{
     	} catch(IOException e){
             throw new FPException((long)1, e.getMessage());
     	}    
+        return res;
+    }
+
+    @Override
+    public StrTable cashInOut(Double ioSum) throws FPException {
+        double[] cashSum = new double[]{0};
+        double[] cashIn = new double[]{0};
+        double[] cashOut = new double[]{0};
+
+        // boolean setServiceMoney(double amount, double[] cashSum, double[] servIn, double[] servOut)
+        if (!FP.setServiceMoney(ioSum, cashSum, cashIn, cashOut))
+            throw createException();
+        
+        StrTable res = new StrTable();
+        res.put("CashSum", String.format(Locale.ROOT, "%.2f", cashSum[0]));
+        res.put("CashIn", String.format(Locale.ROOT, "%.2f", cashIn[0]));
+        res.put("CashOut", String.format(Locale.ROOT, "%.2f", cashOut[0]));
         return res;
     }
     

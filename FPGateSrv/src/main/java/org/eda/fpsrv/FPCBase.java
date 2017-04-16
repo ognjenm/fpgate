@@ -300,7 +300,7 @@ public class FPCBase {
      * @param str
      * @return Split 'str' on lines by LineWidth each
      */
-    protected String[] splitOnLines(String str) {
+    protected String[] splitOnLines(String str, int width) {
         String[] textParts;
         textParts = str.split("\\t");
         ArrayList<String> res = null;
@@ -322,25 +322,28 @@ public class FPCBase {
                 }
                 if (textParts.length > 1) {
                     if (textParts.length > 2) 
-                        res = PrintedStringUtils.pad(textParts[1], getLineWidth(), padType, textParts[2]);
+                        res = PrintedStringUtils.pad(textParts[1], width, padType, textParts[2]);
                     else    
-                        res = PrintedStringUtils.pad(textParts[1], getLineWidth(), padType);
+                        res = PrintedStringUtils.pad(textParts[1], width, padType);
                 }
                 break;
             case "@lval" :
                 if (textParts.length > 1) {
                     if (textParts.length > 2) 
-                        res = PrintedStringUtils.labelValue(textParts[1], textParts[2], getLineWidth());
+                        res = PrintedStringUtils.labelValue(textParts[1], textParts[2], width);
                     else    
-                        res = PrintedStringUtils.labelValue(textParts[1], "", getLineWidth());
+                        res = PrintedStringUtils.labelValue(textParts[1], "", width);
                 }
                 break;
             default :
-                res = PrintedStringUtils.splitInChnunks(str, getLineWidth());
+                res = PrintedStringUtils.splitInChnunks(str, width);
         }
         return res.toArray(new String[res.size()]);
     }
     
+    protected String[] splitOnLines(String str) {
+        return splitOnLines(str, getLineWidth());
+    }
 
     public static taxGroup taxAbbrToGroup(String abbr) {
         if (taxGroupAbbr.containsKey(abbr))
@@ -686,6 +689,17 @@ public class FPCBase {
      */
     public Date setDateTime(java.util.Date dateTime) throws FPException {
         return new Date();
+    }
+    
+    /**
+     * Register Cash In/Out
+     * @param ioSum positive number makes Cash In, negative Cash Out
+     *              Zero value return Accumulated Cash In/Out
+     * @return
+     * @throws FPException
+     */
+    public StrTable cashInOut(Double ioSum) throws FPException {
+        return null;
     }
 }
 

@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import org.datecs.fpcom.CS_BGR_DP55_KL;
 
 /**
@@ -289,7 +290,7 @@ public class FPCD55KL  extends FPCBase {
 
     @Override
     public String customCmd(String CMD, String params) throws FPException{
-        String input = params;
+        String input = params.replace("\\t", "\t");
         String[] output = new String[1];
         output[0] = "";
         lastCommand = "cUSTOM_CMD("+CMD+")";
@@ -455,7 +456,7 @@ public class FPCD55KL  extends FPCBase {
         res.put("IsInvoice", isInv[0]);
         res.put("InvNumber", invDocNum[0]);
         for(taxGroup taxCode : tax.keySet())
-            res.put("Tax"+taxGroupToCharL(taxCode), tax.get(taxCode)[0]);
+            res.put("Tax"+taxGroupToCharL(taxCode), String.format(Locale.ROOT, "%.2f", Double.parseDouble(tax.get(taxCode)[0])/100));
         
         String[] docNum = new String[]{""};
         lastCommand = "cMD_113_0_0";
@@ -473,6 +474,19 @@ public class FPCD55KL  extends FPCBase {
             , tax.get(taxGroup.E), tax.get(taxGroup.F), tax.get(taxGroup.G), tax.get(taxGroup.H)
             , closureDate
         );
+        if (errCode[0].length() > 1) {
+            // errCode съдържа и номера ма документа P0546, тогава всички се подместват
+            closureDate[0] = tax.get(taxGroup.H)[0];
+            tax.get(taxGroup.H)[0] = tax.get(taxGroup.G)[0];
+            tax.get(taxGroup.G)[0] = tax.get(taxGroup.F)[0];
+            tax.get(taxGroup.F)[0] = tax.get(taxGroup.E)[0];
+            tax.get(taxGroup.E)[0] = tax.get(taxGroup.D)[0];
+            tax.get(taxGroup.D)[0] = tax.get(taxGroup.C)[0];
+            tax.get(taxGroup.C)[0] = tax.get(taxGroup.B)[0];
+            tax.get(taxGroup.B)[0] = tax.get(taxGroup.A)[0];
+            tax.get(taxGroup.A)[0] = docNum[0];
+            docNum[0] = errCode[0].substring(1);
+        }
         res.put("LFRI_DocNum", docNum[0]);
         res.put("LFRI_DateTime_", closureDate[0]);
 
@@ -482,7 +496,7 @@ public class FPCD55KL  extends FPCBase {
         
 //        res.put("LFRI_Total", Double.toString(total[0]));
         for(taxGroup taxCode : tax.keySet())
-            res.put("LFRI_Tax"+taxGroupToCharL(taxCode), tax.get(taxCode)[0]);
+            res.put("LFRI_Tax"+taxGroupToCharL(taxCode), String.format(Locale.ROOT, "%.2f", Double.parseDouble(tax.get(taxCode)[0])/100));
         return res;
     }
 
@@ -760,5 +774,22 @@ public class FPCD55KL  extends FPCBase {
 //    public StrTable getJournal(boolean readAndErase) throws FPException {
 //    }
     
+    @Override
+    public StrTable cashInOut(Double ioSum) throws FPException {
+        String[] exitCode = new String[]{""};
+        String[] cashSum = new String[]{""};
+        String[] cashIn = new String[]{""};
+        String[] cashOut = new String[]{""};
+
+        lastCommand = "cMD_70_0_0";
+        // int cMD_70_0_0(String amount, String[] exitCode, String[] cashSum, String[] servIn, String[] servOut)
+        lastErrorCode = FP.cMD_70_0_0(String.format(Locale.ROOT, "%.2f", ioSum), exitCode, cashSum, cashIn, cashOut);
+        checkForError();
+        StrTable res = new StrTable();
+        res.put("CashSum", String.format(Locale.ROOT, "%.2f", Double.parseDouble(cashSum[0])/100));
+        res.put("CashIn", String.format(Locale.ROOT, "%.2f", Double.parseDouble(cashIn[0])/100));
+        res.put("CashOut", String.format(Locale.ROOT, "%.2f", Double.parseDouble(cashOut[0])/100));
+        return res;
+    }
     
 }
